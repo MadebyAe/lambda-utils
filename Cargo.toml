@@ -2,6 +2,8 @@
 name = "lambda_utils"
 version = "0.1.0"
 edition = "2021"
+authors = ["Ae <hi@angel-estrada.com>"]
+keywords = ["aws", "lambda", "serverless", "rust"]
 
 [dependencies]
 aws-config = "0.52.0"
@@ -9,3 +11,4 @@ aws_lambda_events = "0.7.2"
 lambda_http = "0.7.0"
 mongodb = "2.3.1"
 once_cell = "1.17.0"
+tokio = { version = "1.17.0", features = ["full", "test-util"] }
