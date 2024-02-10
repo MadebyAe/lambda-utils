@@ -34,15 +34,14 @@ To start using Lambda Utils in your AWS Rust Lambda projects, follow these steps
 
     ```rust
     // Example: Importing header.rs
-    extern crate lambda_utils;
-    use lambda_utils::header;
+    use lambda_utils::headers::{get_header_cookies, get_header_user_agent};
     ```
 
 3. Begin using the utilities in your Lambda function code:
 
     ```rust
     // Example: Getting the user agent from headers
-    let user_agent = header::get_header_user_agent(request);
+    let user_agent = get_header_user_agent(request);
     ```
 
 ## Contributing
