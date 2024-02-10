@@ -49,7 +49,7 @@ To start using Lambda Utils in your AWS Rust Lambda projects, follow these steps
 Contributions to Lambda Utils are welcome! If you have suggestions for improvements or additional utility modules, please feel free to open an issue or submit a pull request on the [GitHub repository](https://github.com/MadeByAe/lambda-utils).
 
 ## License
-This project is licensed under the [MIT License](LICENSE). Feel free to use, modify, and distribute this code according to the terms of the license.
+This project is licensed under the [MIT License](LICENSE.md). Feel free to use, modify, and distribute this code according to the terms of the license.
 
 ## About
 Lambda Utils is maintained by (Ae) Angel Estrada. For questions or support, please contact [angel-estrada.com].
