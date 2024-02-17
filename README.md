@@ -4,7 +4,7 @@ Lambda Utils is a collection of utility modules designed to facilitate common ta
 
 ## Included Utils
 
-### header.rs
+### headers.rs
 - **Description:** A utility module for parsing HTTP headers.
 - **Usage:** Helps in extracting and processing headers from incoming HTTP requests.
 
@@ -23,11 +23,10 @@ Lambda Utils is a collection of utility modules designed to facilitate common ta
 ## Getting Started
 To start using Lambda Utils in your AWS Rust Lambda projects, follow these steps:
 
-1. Add Lambda Utils as a dependency in your `Cargo.toml` file:
+1. Add Lambda Utils as a dependency in your  project:
 
-    ```toml
-    [dependencies]
-    lambda-utils = "0.1.0"
+    ```sh
+    cargo add lambda-utils
     ```
 
 2. Import the desired utility modules into your Rust Lambda project:
