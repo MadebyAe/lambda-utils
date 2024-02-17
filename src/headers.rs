@@ -2,14 +2,18 @@ use lambda_http::{Request};
 use std::collections::{HashMap};
 use serde_json::{to_string};
 
-pub fn get_header_user_agent(request: &Request) -> String {
+pub fn get_header_value(request: &Request, value: String) -> String {
     return request
         .headers()
-        .get("User-Agent")
+        .get(value)
         .map_or_else(
-            || "Unknown User-Agent".to_string(),
-            |header_value| header_value.to_str().unwrap_or("Invalid User-Agent").to_string(),
+            || "Unknown header value".to_string(),
+            |header_value| header_value.to_str().unwrap_or("Invalid header value").to_string(),
         );
+
+
+pub fn get_header_user_agent(request: &Request) -> String {
+    return get_header_value("User-Agent")
 }
 
 pub fn get_header_cookies(request: &Request) -> String {

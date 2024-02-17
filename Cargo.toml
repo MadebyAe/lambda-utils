@@ -10,12 +10,20 @@ categories = ["utils"]
 license = "MIT"
 
 [dependencies]
-aws-config = { version = "1.1.2", features = ["behavior-version-latest"] }
-aws-sdk-sqs = "1.9.0"
-aws-types = "1.1.2"
-aws_lambda_events = "0.7.2"
-lambda_http = "0.7.0"
-mongodb = "2.3.1"
-once_cell = "1.17.0"
-serde_json = "1.0.79"
+aws-config = { version = "1.1.2", features = ["behavior-version-latest"], optional = true }
+aws-sdk-sqs = { version = "1.9.0", optional = true }
+aws-types = { version = "1.1.2", optional = true }
+aws_lambda_events = { version = "0.7.2", optional = true }
+lambda_http = { version = "0.7.0", optional = true }
+mongodb = { version = "2.3.1", optional = true }
+once_cell = { version = "1.17.0", optional = true }
+serde_json = { version = "1.0.79", optional = true }
+
+[dev-dependencies]
 tokio = { version = "1.17.0", features = ["full", "test-util"] }
+
+[features]
+headers = ["lambda_http", "serde_json"]
+mongodb = ["dep:mongodb", "once_cell"]
+network = ["aws_lambda_events", "lambda_http"]
+sqs = ["aws-sdk-sqs", "aws-config", "serde_json"]

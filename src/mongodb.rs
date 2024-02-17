@@ -32,12 +32,14 @@ pub fn get_mongodb_client() -> Result<&'static Client, Box<dyn Error + Send + Sy
 }
 
 #[cfg(test)]
-#[tokio::test]
-async fn test_create_mongodb_client() {
-    env::set_var(get_mongodb_uri_env_key(), "mongodb+srv://foo:bar@cluster0.irqdk.mongodb.net/test");
+mod tests {
+    #[tokio::test]
+    async fn test_create_mongodb_client() {
+        env::set_var(get_mongodb_uri_env_key(), "mongodb+srv://foo:bar@cluster0.irqdk.mongodb.net/test");
 
-    let client = create_mongodb_client().await;
+        let client = create_mongodb_client().await;
 
-    assert!(client.is_ok());
-    assert!(MONGODB_CLIENT.get().is_some());
+        assert!(client.is_ok());
+        assert!(MONGODB_CLIENT.get().is_some());
+    }
 }
