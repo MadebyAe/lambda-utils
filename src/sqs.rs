@@ -37,7 +37,6 @@ pub async fn receive_from_sqs() -> Result<ReceiveMessageOutput, SqsError> {
         .send()
         .await?;
 
-    println!("Data: {:?}", data);
     Ok(data)
 }
 
