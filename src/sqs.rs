@@ -1,9 +1,8 @@
 use aws_sdk_sqs::{Client, Error as SqsError};
 use aws_sdk_sqs::operation::receive_message::{ReceiveMessageOutput};
-use aws_config;
+use aws_config::{SdkConfig};
 use std::env;
 use std::error::Error;
-use serde_json::{json, Value};
 
 fn get_sqs_url_from_env_var() -> Result<String, Box<dyn Error + Send + Sync>> {
     return  env::var(get_sqs_url_env_key()).map_err(|_| "Missing AWS_SQS_URL environment var".into());
@@ -14,7 +13,7 @@ fn get_sqs_url_env_key() -> &'static str {
 }
 
 pub async fn send_to_sqs(data: String) -> Result<(), SqsError> {
-    let config = aws_config::load_from_env().await;
+    let config: SdkConfig = aws_config::load_from_env().await;
     let sqs_client = Client::new(&config);
     let message_body = &data;
     let queue_url = get_sqs_url_from_env_var().unwrap();
@@ -29,7 +28,7 @@ pub async fn send_to_sqs(data: String) -> Result<(), SqsError> {
 }
 
 pub async fn receive_from_sqs() -> Result<ReceiveMessageOutput, SqsError> {
-    let config = aws_config::load_from_env().await;
+    let config: SdkConfig = aws_config::load_from_env().await;
     let sqs_client = Client::new(&config);
     let queue_url = get_sqs_url_from_env_var().unwrap();
     let data = sqs_client
@@ -41,27 +40,30 @@ pub async fn receive_from_sqs() -> Result<ReceiveMessageOutput, SqsError> {
     Ok(data)
 }
 
-pub fn create_mock_object() -> Value {
-    json!({ "hello": "world" })
-}
-
 #[cfg(test)]
+mod tests {
+    use serde_json::{json, Value};
 
-#[tokio::test] #[ignore = "ignore for now"]
-async fn test_send_to_sqs() {
-    env::set_var(get_sqs_url_env_key(), "https://sqs.us-east-1.amazonaws.com/0000000000/foo-bar");
+    fn create_mock_object() -> Value {
+        json!({ "hello": "world" })
+    }
 
-    let data = create_mock_object();
-    let client = send_to_sqs(data.to_string()).await.unwrap();
+    #[tokio::test] #[ignore = "ignore for now"]
+    async fn test_send_to_sqs() {
+        env::set_var(get_sqs_url_env_key(), "https://sqs.us-east-1.amazonaws.com/0000000000/foo-bar");
 
-    assert_eq!(client, ());
-}
+        let data = create_mock_object();
+        let client = send_to_sqs(data.to_string()).await.unwrap();
 
-#[tokio::test] #[ignore = "ignore for now"]
-async fn test_receive_from_sqs() {
-    env::set_var(get_sqs_url_env_key(), "https://sqs.us-east-1.amazonaws.com/0000000000/foo-bar");
+        assert_eq!(client, ());
+    }
 
-    let data: ReceiveMessageOutput = receive_from_sqs().await.unwrap();
+    #[tokio::test] #[ignore = "ignore for now"]
+    async fn test_receive_from_sqs() {
+        env::set_var(get_sqs_url_env_key(), "https://sqs.us-east-1.amazonaws.com/0000000000/foo-bar");
 
-    assert_eq!(data.messages.unwrap().len(), 0);
+        let data: ReceiveMessageOutput = receive_from_sqs().await.unwrap();
+
+        assert_eq!(data.messages.unwrap().len(), 0);
+    }
 }
