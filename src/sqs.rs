@@ -12,6 +12,20 @@ fn get_sqs_url_env_key() -> &'static str {
     return "AWS_SQS_URL";
 }
 
+pub async fn delete_message_from_sqs(receipt_handle: &str) -> {
+    let config: SdkConfig = aws_config::load_from_env().await;
+    let sqs_client = Client::new(&config);
+    let queue_url = get_sqs_url_from_env_var().unwrap();
+
+    sqs_client.delete_message()
+        .queue_url(queue_url)
+        .receipt_handle(receipt_handle)
+        .send()
+        .await?;
+
+    Ok(())
+}
+
 pub async fn send_to_sqs(data: String) -> Result<(), SqsError> {
     let config: SdkConfig = aws_config::load_from_env().await;
     let sqs_client = Client::new(&config);
