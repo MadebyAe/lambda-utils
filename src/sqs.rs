@@ -12,7 +12,7 @@ fn get_sqs_url_env_key() -> &'static str {
     return "AWS_SQS_URL";
 }
 
-pub async fn delete_message_from_sqs(receipt_handle: &str) -> {
+pub async fn delete_message_from_sqs(receipt_handle: &str) -> Result<(), SqsError> {
     let config: SdkConfig = aws_config::load_from_env().await;
     let sqs_client = Client::new(&config);
     let queue_url = get_sqs_url_from_env_var().unwrap();
