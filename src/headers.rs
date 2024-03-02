@@ -13,7 +13,7 @@ pub fn get_header_value(request: &Request, value: String) -> String {
 
 
 pub fn get_header_user_agent(request: &Request) -> String {
-    return get_header_value("User-Agent")
+    return get_header_value("User-Agent");
 }
 
 pub fn get_header_cookies(request: &Request) -> String {
