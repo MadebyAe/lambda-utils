@@ -1,0 +1,42 @@
+name: Publish
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: 🛠️ Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: 🏗️ Build the package
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+
+      - name: 🧪 Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+      - name: 📦 Publish to crates.io (Dry Run)
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --token ${{ secrets.CRATES_IO_TOKEN }} --dry-run
+
+      - name: 🚀 Publish to crates.io
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --token ${{ secrets.CRATES_IO_TOKEN }}
+
