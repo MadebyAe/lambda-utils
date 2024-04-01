@@ -2,7 +2,7 @@
 name = "lambda_utils"
 version = "0.1.5"
 edition = "2021"
-homepage = "https://github.com/MadebyAe/lambda-utils"
+repository = "https://github.com/MadebyAe/lambda-utils"
 description = "Lambda Utils for AWS Rust Lambda"
 authors = ["Ae <hi@angel-estrada.com>"]
 keywords = ["aws", "lambda", "serverless", "rust"]
