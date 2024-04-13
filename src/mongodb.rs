@@ -39,7 +39,10 @@ pub fn get_mongodb_client() -> Result<&'static Client, Box<dyn Error + Send + Sy
 }
 
 #[cfg(test)]
-mod tests {
+mod mongodb_tests {
+    use super::*;
+    use std::env;
+
     #[tokio::test]
     async fn test_create_mongodb_client() {
         env::set_var(

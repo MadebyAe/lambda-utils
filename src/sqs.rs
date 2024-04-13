@@ -58,7 +58,8 @@ pub async fn receive_from_sqs() -> Result<ReceiveMessageOutput, SqsError> {
 }
 
 #[cfg(test)]
-mod tests {
+mod sqs_tests {
+    use super::*;
     use serde_json::{json, Value};
 
     fn create_mock_object() -> Value {

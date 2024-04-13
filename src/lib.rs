@@ -7,5 +7,8 @@ pub mod mongodb;
 #[cfg(feature = "network")]
 pub mod network;
 
+#[cfg(feature = "response")]
+pub mod response;
+
 #[cfg(feature = "sqs")]
 pub mod sqs;
