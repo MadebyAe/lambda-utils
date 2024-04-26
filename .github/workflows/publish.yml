@@ -28,6 +28,12 @@ jobs:
         with:
           command: test
 
+      - name: 📚 Generate documentation
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --all-features
+
       - name: 📦 Publish to crates.io (Dry Run)
         uses: actions-rs/cargo@v1
         with:

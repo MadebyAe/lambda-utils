@@ -5,7 +5,7 @@ edition = "2021"
 repository = "https://github.com/MadebyAe/lambda-utils"
 description = "Lambda Utils for AWS Rust Lambda"
 authors = ["Ae <hi@angel-estrada.com>"]
-keywords = ["aws", "lambda", "serverless", "rust", "macros", "mongodb", "sqs"]
+keywords = ["aws", "lambda", "serverless", "rust", "macros"]
 categories = ["utils"]
 license = "MIT"
 
