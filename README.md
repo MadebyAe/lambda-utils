@@ -1,5 +1,7 @@
 # Lambda Utils
 
+![lambda-utils](https://github.com/MadebyAe/lambda-utils/assets/1707438/399667dd-0b27-4b7b-bb24-46a6ba314c63)
+
 Lambda Utils is a collection of utility modules designed to facilitate common tasks when developing AWS Lambda functions using Rust. These utilities are intended to simplify the development process and promote code reuse across different Lambda projects.
 
 ## Included Utils
