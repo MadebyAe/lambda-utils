@@ -29,3 +29,6 @@ mongodb = ["dep:mongodb", "once_cell"]
 network = ["aws_lambda_events", "lambda_http"]
 response = ["chrono", "lambda_http", "serde_json"]
 sqs = ["aws-sdk-sqs", "aws-config", "serde_json"]
+
+[package.metadata.docs.rs]
+features = ["headers", "mongodb", "network", "response", "sqs"]
