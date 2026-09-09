@@ -55,12 +55,8 @@ pub async fn get_item(
     Ok(output.item)
 }
 
-/// A thin `UpdateItem` wrapper, matching `put_item`/`get_item`/`delete_item`'s
-/// style — `condition_expression` is optional since not every update needs
-/// one. Errors (including a failed condition — `SdkError::ServiceError` where
-/// `.err().is_conditional_check_failed_exception()` is `true`) are returned
-/// as-is; interpreting what a failed condition means is the caller's
-/// business logic, not this crate's.
+/// `condition_expression` is optional. A failed condition comes back as
+/// `Err(SdkError::ServiceError)` with `.err().is_conditional_check_failed_exception()`.
 pub async fn update_item(
     key: HashMap<String, AttributeValue>,
     update_expression: &str,
