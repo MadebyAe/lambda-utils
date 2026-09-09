@@ -1,3 +1,6 @@
+#[cfg(feature = "dynamodb")]
+pub mod dynamodb;
+
 #[cfg(feature = "headers")]
 pub mod headers;
 
@@ -6,6 +9,9 @@ pub mod mongodb;
 
 #[cfg(feature = "network")]
 pub mod network;
+
+#[cfg(feature = "postgres")]
+pub mod postgres;
 
 #[cfg(feature = "response")]
 pub mod response;
