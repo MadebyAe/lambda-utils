@@ -55,45 +55,36 @@ pub async fn get_item(
     Ok(output.item)
 }
 
-/// Conditional update — applies `update_expression` only if
-/// `condition_expression` holds against the item's current state (e.g. a
-/// status field is still in the expected starting value). Returns `Ok(true)`
-/// if the update applied, `Ok(false)` if the condition failed (someone else
-/// already transitioned this item — the caller treats this as "already
-/// handled," not an error), and `Err` for any other failure.
-///
-/// Guards against double-processing under at-least-once delivery (SQS,
-/// duplicate Lambda invocations): a second concurrent caller finds the
-/// condition already false and backs off instead of redoing the work.
-pub async fn update_item_if(
+/// A thin `UpdateItem` wrapper, matching `put_item`/`get_item`/`delete_item`'s
+/// style — `condition_expression` is optional since not every update needs
+/// one. Errors (including a failed condition — `SdkError::ServiceError` where
+/// `.err().is_conditional_check_failed_exception()` is `true`) are returned
+/// as-is; interpreting what a failed condition means is the caller's
+/// business logic, not this crate's.
+pub async fn update_item(
     key: HashMap<String, AttributeValue>,
     update_expression: &str,
-    condition_expression: &str,
-    expression_attribute_names: HashMap<String, String>,
-    expression_attribute_values: HashMap<String, AttributeValue>,
-) -> Result<bool, Box<SdkError<UpdateItemError>>> {
+    condition_expression: Option<&str>,
+    expression_attribute_names: Option<HashMap<String, String>>,
+    expression_attribute_values: Option<HashMap<String, AttributeValue>>,
+) -> Result<(), Box<SdkError<UpdateItemError>>> {
     let config: SdkConfig = aws_config::load_from_env().await;
     let client = Client::new(&config);
     let table_name = get_dynamodb_table_from_env_var().unwrap();
 
-    let result = client
+    client
         .update_item()
         .table_name(table_name)
         .set_key(Some(key))
         .update_expression(update_expression)
-        .condition_expression(condition_expression)
-        .set_expression_attribute_names(Some(expression_attribute_names))
-        .set_expression_attribute_values(Some(expression_attribute_values))
+        .set_condition_expression(condition_expression.map(str::to_string))
+        .set_expression_attribute_names(expression_attribute_names)
+        .set_expression_attribute_values(expression_attribute_values)
         .send()
-        .await;
+        .await
+        .map_err(Box::new)?;
 
-    match result {
-        Ok(_) => Ok(true),
-        Err(SdkError::ServiceError(ref e)) if e.err().is_conditional_check_failed_exception() => {
-            Ok(false)
-        }
-        Err(e) => Err(Box::new(e)),
-    }
+    Ok(())
 }
 
 pub async fn delete_item(
@@ -138,7 +129,7 @@ mod dynamodb_tests {
 
     #[tokio::test]
     #[ignore = "requires a real (or local-emulator) DynamoDB endpoint"]
-    async fn test_update_item_if_applies_then_rejects_a_repeat() {
+    async fn test_update_item_applies_a_conditional_transition() {
         env::set_var(get_dynamodb_table_env_key(), "test-table");
 
         let key = || {
@@ -155,29 +146,30 @@ mod dynamodb_tests {
         );
         put_item(item).await.unwrap();
 
-        let names = HashMap::from([("#status".to_string(), "status".to_string())]);
-        let values = HashMap::from([
-            (
-                ":new".to_string(),
-                AttributeValue::S("IN_PROGRESS".to_string()),
-            ),
-            (
-                ":expected".to_string(),
-                AttributeValue::S("PENDING".to_string()),
-            ),
-        ]);
+        let names = || HashMap::from([("#status".to_string(), "status".to_string())]);
+        let values = || {
+            HashMap::from([
+                (
+                    ":new".to_string(),
+                    AttributeValue::S("IN_PROGRESS".to_string()),
+                ),
+                (
+                    ":expected".to_string(),
+                    AttributeValue::S("PENDING".to_string()),
+                ),
+            ])
+        };
 
         // First call: item is still PENDING, condition holds, update applies.
-        let first = update_item_if(
+        update_item(
             key(),
             "SET #status = :new",
-            "#status = :expected",
-            names.clone(),
-            values.clone(),
+            Some("#status = :expected"),
+            Some(names()),
+            Some(values()),
         )
         .await
         .unwrap();
-        assert!(first, "first transition should apply — item was PENDING");
 
         let after_first = get_item(key()).await.unwrap().unwrap();
         assert_eq!(
@@ -187,19 +179,23 @@ mod dynamodb_tests {
 
         // Second call with the same condition: item is now IN_PROGRESS, so
         // the condition (#status = PENDING) no longer holds — this is the
-        // exact scenario a duplicate SQS delivery hits.
-        let second = update_item_if(
+        // exact scenario a duplicate SQS delivery hits. The caller (not this
+        // crate) is responsible for recognizing this as "already handled."
+        let second = update_item(
             key(),
             "SET #status = :new",
-            "#status = :expected",
-            names,
-            values,
+            Some("#status = :expected"),
+            Some(names()),
+            Some(values()),
         )
-        .await
-        .unwrap();
-        assert!(
-            !second,
-            "second transition must be rejected — item was already IN_PROGRESS"
-        );
+        .await;
+
+        let err = second.expect_err("condition should fail — item was already IN_PROGRESS");
+        match *err {
+            SdkError::ServiceError(ref e) => {
+                assert!(e.err().is_conditional_check_failed_exception());
+            }
+            other => panic!("expected a ConditionalCheckFailedException, got {other:?}"),
+        }
     }
 }
