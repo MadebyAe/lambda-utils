@@ -8,7 +8,7 @@ Lambda Utils is a collection of utility modules designed to facilitate common ta
 
 ### dynamodb.rs
 - **Description:** An AWS DynamoDB helper module.
-- **Usage:** Simplifies `PutItem`/`GetItem`/`DeleteItem` calls against a table named by the `AWS_DYNAMODB_TABLE` environment variable. `update_item_if` runs a conditional `UpdateItem` — returns `Ok(false)` instead of erroring when the condition fails, for guarding against double-processing under at-least-once delivery (e.g. a duplicate SQS message).
+- **Usage:** Simplifies `PutItem`/`GetItem`/`DeleteItem`/`UpdateItem` calls against a table named by the `AWS_DYNAMODB_TABLE` environment variable. `update_item`'s `condition_expression` is optional, for a conditional update (e.g. compare-and-swap on a status field) — a failed condition (`ConditionalCheckFailedException`) is returned as a normal `Err`, same as any other failure; interpreting what that means is up to the caller.
 - **Feature:** `dynamodb`
 
 ### headers.rs
