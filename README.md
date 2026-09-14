@@ -33,7 +33,7 @@ Lambda Utils is a collection of utility modules designed to facilitate common ta
 
 ### response.rs
 - **Description:** JSON response helper macros for Lambda HTTP handlers.
-- **Usage:** `json_ok!(body)` and `json_error!(status, message)` build a ready-to-return `lambda_http::Response` without hand-rolling status codes and headers each time.
+- **Usage:** `json_ok!(body)` (defaults to `200 OK`) or `json_ok!(status, body)` (e.g. `json_ok!(StatusCode::CREATED, body)`) and `json_error!(status, message)` build a ready-to-return `lambda_http::Response` without hand-rolling status codes and headers each time.
 - **Feature:** `response`
 
 ### sqs.rs

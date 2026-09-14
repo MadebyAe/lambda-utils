@@ -33,9 +33,16 @@ macro_rules! json_error {
 }
 pub use json_error;
 
+/// `json_ok!(data)` defaults to `200 OK`; `json_ok!(status_code, data)`
+/// (e.g. `json_ok!(StatusCode::CREATED, data)`) overrides it for a
+/// success response that isn't a plain `OK` (`201 Created`,
+/// `202 Accepted`, etc.).
 #[macro_export]
 macro_rules! json_ok {
-    ($data:tt) => {{
+    ($data:tt) => {
+        $crate::json_ok!(lambda_http::http::StatusCode::OK, $data)
+    };
+    ($status_code:expr, $data:tt) => {{
         use lambda_http::http::Response;
         use lambda_http::Body;
         use serde_json::json;
@@ -43,7 +50,7 @@ macro_rules! json_ok {
         let body = json!($data).to_string();
 
         Response::builder()
-            .status(StatusCode::OK)
+            .status($status_code)
             .header("Content-Type", "application/json")
             .body(Body::from(body))
             .expect("Failed to construct success response")
@@ -82,5 +89,14 @@ mod response_tests {
 
         let body = extract_body(response);
         assert_eq!(body["data"], "Success");
+    }
+
+    #[test]
+    fn json_ok_macro_with_explicit_status_code_test() {
+        let response = json_ok!(StatusCode::CREATED, { "data": "Created" });
+        assert_eq!(response.status(), StatusCode::CREATED);
+
+        let body = extract_body(response);
+        assert_eq!(body["data"], "Created");
     }
 }
