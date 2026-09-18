@@ -9,12 +9,26 @@ use lambda_http::{Request, RequestExt};
 /// attributes), or a user with no `custom:org_id` set - callers must treat
 /// `None` as a hard reject, never as "no restriction."
 pub fn caller_org_id(request: &Request) -> Option<String> {
+    claim(request, "custom:org_id")
+}
+
+/// The caller's stable Cognito identity (`sub`) - a real UUID-shaped
+/// identifier assigned once at user creation and never reused, unlike
+/// `email`/`cognito:username` which a user can change. Present on both the
+/// ID and access token (unlike custom attributes), but this only reads the
+/// ID-token shape - same `None`-on-anything-else caveats as
+/// `caller_org_id`.
+pub fn caller_user_id(request: &Request) -> Option<String> {
+    claim(request, "sub")
+}
+
+fn claim(request: &Request, name: &str) -> Option<String> {
     match request.request_context_ref() {
         Some(RequestContext::ApiGatewayV2(context)) => context
             .authorizer
             .as_ref()
             .and_then(|authorizer| authorizer.jwt.as_ref())
-            .and_then(|jwt| jwt.claims.get("custom:org_id").cloned()),
+            .and_then(|jwt| jwt.claims.get(name).cloned()),
         _ => None,
     }
 }
@@ -41,6 +55,24 @@ macro_rules! require_org_id {
     };
 }
 pub use require_org_id;
+
+/// `require_user_id!(request)` - same shape as `require_org_id!`, for
+/// `caller_user_id`.
+#[macro_export]
+macro_rules! require_user_id {
+    ($request:expr) => {
+        match $crate::auth::caller_user_id(&$request) {
+            Some(user_id) => user_id,
+            None => {
+                return Ok($crate::json_error!(
+                    lambda_http::http::StatusCode::UNAUTHORIZED,
+                    "missing or invalid user claim"
+                ))
+            }
+        }
+    };
+}
+pub use require_user_id;
 
 #[cfg(test)]
 mod auth_tests {
@@ -101,6 +133,24 @@ mod auth_tests {
         assert_eq!(caller_org_id(&request), None);
     }
 
+    #[test]
+    fn returns_the_user_id_claim_when_present() {
+        let claims = HashMap::from([("sub".to_string(), "mock-sub-pepsi-001".to_string())]);
+        let request = request_with_claims(Some(claims));
+
+        assert_eq!(
+            caller_user_id(&request),
+            Some("mock-sub-pepsi-001".to_string())
+        );
+    }
+
+    #[test]
+    fn caller_user_id_returns_none_when_unauthenticated() {
+        let request = Request::new(Body::Empty);
+
+        assert_eq!(caller_user_id(&request), None);
+    }
+
     // Mirrors real handler shape exactly (`request: Request`, returns
     // `Result<Response<Body>, lambda_http::Error>`) since the macro's
     // early-return only type-checks against that specific shape.
@@ -128,6 +178,37 @@ mod auth_tests {
         let request = Request::new(Body::Empty);
 
         let response = handler_using_macro(request).unwrap();
+
+        assert_eq!(
+            response.status(),
+            lambda_http::http::StatusCode::UNAUTHORIZED
+        );
+    }
+
+    fn handler_using_user_id_macro(request: Request) -> Result<Response<Body>, lambda_http::Error> {
+        let user_id = require_user_id!(request);
+        Ok(Response::builder()
+            .status(200)
+            .body(Body::from(user_id))
+            .unwrap())
+    }
+
+    #[test]
+    fn require_user_id_returns_the_user_id_when_present() {
+        let claims = HashMap::from([("sub".to_string(), "mock-sub-pepsi-001".to_string())]);
+        let request = request_with_claims(Some(claims));
+
+        let response = handler_using_user_id_macro(request).unwrap();
+
+        assert_eq!(response.status(), 200);
+        assert_eq!(response.into_body(), Body::from("mock-sub-pepsi-001"));
+    }
+
+    #[test]
+    fn require_user_id_returns_401_when_missing() {
+        let request = Request::new(Body::Empty);
+
+        let response = handler_using_user_id_macro(request).unwrap();
 
         assert_eq!(
             response.status(),
