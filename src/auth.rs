@@ -19,6 +19,29 @@ pub fn caller_org_id(request: &Request) -> Option<String> {
     }
 }
 
+/// `require_org_id!(request)` - the `caller_org_id` check every org-scoped
+/// handler needs, without repeating the `let Some(...) = ... else { return
+/// ...; }` block at every call site. A macro, not a function: it has to
+/// `return` out of the *caller's* function (an `async fn` returning
+/// `Result<Response<Body>, Error>`), which a plain function can't do.
+/// Needs the `response` feature too (pulled in automatically - `auth`
+/// depends on it in Cargo.toml) for `json_error!`.
+#[macro_export]
+macro_rules! require_org_id {
+    ($request:expr) => {
+        match $crate::auth::caller_org_id(&$request) {
+            Some(org_id) => org_id,
+            None => {
+                return Ok($crate::json_error!(
+                    lambda_http::http::StatusCode::UNAUTHORIZED,
+                    "missing or invalid org claim"
+                ))
+            }
+        }
+    };
+}
+pub use require_org_id;
+
 #[cfg(test)]
 mod auth_tests {
     use super::*;
@@ -26,7 +49,7 @@ mod auth_tests {
         ApiGatewayRequestAuthorizer, ApiGatewayRequestAuthorizerJwtDescription,
         ApiGatewayV2httpRequestContext,
     };
-    use lambda_http::{Body, Request};
+    use lambda_http::{Body, Request, Response};
     use std::collections::HashMap;
 
     fn request_with_claims(claims: Option<HashMap<String, String>>) -> Request {
@@ -76,5 +99,39 @@ mod auth_tests {
         let request = request_with_claims(None);
 
         assert_eq!(caller_org_id(&request), None);
+    }
+
+    // Mirrors real handler shape exactly (`request: Request`, returns
+    // `Result<Response<Body>, lambda_http::Error>`) since the macro's
+    // early-return only type-checks against that specific shape.
+    fn handler_using_macro(request: Request) -> Result<Response<Body>, lambda_http::Error> {
+        let org_id = require_org_id!(request);
+        Ok(Response::builder()
+            .status(200)
+            .body(Body::from(org_id))
+            .unwrap())
+    }
+
+    #[test]
+    fn require_org_id_returns_the_org_id_when_present() {
+        let claims = HashMap::from([("custom:org_id".to_string(), "org_pepsi".to_string())]);
+        let request = request_with_claims(Some(claims));
+
+        let response = handler_using_macro(request).unwrap();
+
+        assert_eq!(response.status(), 200);
+        assert_eq!(response.into_body(), Body::from("org_pepsi"));
+    }
+
+    #[test]
+    fn require_org_id_returns_401_when_missing() {
+        let request = Request::new(Body::Empty);
+
+        let response = handler_using_macro(request).unwrap();
+
+        assert_eq!(
+            response.status(),
+            lambda_http::http::StatusCode::UNAUTHORIZED
+        );
     }
 }
